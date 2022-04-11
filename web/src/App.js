@@ -1,72 +1,134 @@
-import TextField from "@material-ui/core/TextField"
-import React, { useEffect, useRef, useState } from "react"
-import io from "socket.io-client"
-import "./App.css"
+import TextField from "@material-ui/core/TextField";
+import React, { useEffect, useRef, useState } from "react";
+import io from "socket.io-client";
+import "./App.css";
 
 function App() {
-	const [ state, setState ] = useState({ message: "", name: "" })
-	const [ chat, setChat ] = useState([])
+  const [messageDetails, setMessageDetails] = useState({
+    message: "",
+    name: "",
+  });
+  const [chat, setChat] = useState([]);
 
-	const socketRef = useRef()
+  const [commentDetails, setCommentDetails] = useState({
+    name: "",
+    comment: "",
+  });
+  const [comments, setComments] = useState([]);
 
-	useEffect(
-		() => {
-			socketRef.current = io.connect("http://localhost:4000")
-			socketRef.current.on("message", ({ name, message }) => {
-				setChat([ ...chat, { name, message } ])
-			})
-			return () => socketRef.current.disconnect()
-		},
-		[ chat ]
-	)
+  const socketRef = useRef();
 
-	const onTextChange = (e) => {
-		setState({ ...state, [e.target.name]: e.target.value })
-	}
+  useEffect(() => {
+    socketRef.current = io.connect("http://localhost:4000");
+    socketRef.current.on("messageReply", ({ name, message, dateTime }) => {
+      setChat([...chat, { name, message, dateTime }]);
+    });
+    socketRef.current.on("comment", ({ name, comment }) => {
+      setComments([...comments, { name, comment }]);
+    });
+    return () => socketRef.current.disconnect();
+  }, [chat, comments]);
 
-	const onMessageSubmit = (e) => {
-		const { name, message } = state
-		socketRef.current.emit("message", { name, message })
-		e.preventDefault()
-		setState({ message: "", name })
-	}
+  const onMessageDetailsChange = (e) => {
+    setMessageDetails({ ...messageDetails, [e.target.name]: e.target.value });
+  };
+  const onCommentDetailsChange = (e) => {
+    setCommentDetails({ ...commentDetails, [e.target.name]: e.target.value });
+  };
 
-	const renderChat = () => {
-		return chat.map(({ name, message }, index) => (
-			<div key={index}>
-				<h3>
-					{name}: <span>{message}</span>
-				</h3>
-			</div>
-		))
-	}
+  const onMessageSubmit = (e) => {
+    const { name, message } = messageDetails;
+    socketRef.current.emit("messageSend", { name, message });
+    e.preventDefault();
+    setMessageDetails({ message: "", name });
+  };
 
-	return (
-		<div className="card">
-			<form onSubmit={onMessageSubmit}>
-				<h1>Messenger</h1>
-				<div className="name-field">
-					<TextField name="name" onChange={(e) => onTextChange(e)} value={state.name} label="Name" />
-				</div>
-				<div>
-					<TextField
-						name="message"
-						onChange={(e) => onTextChange(e)}
-						value={state.message}
-						id="outlined-multiline-static"
-						variant="outlined"
-						label="Message"
-					/>
-				</div>
-				<button>Send Message</button>
-			</form>
-			<div className="render-chat">
-				<h1>Chat Log</h1>
-				{renderChat()}
-			</div>
-		</div>
-	)
+  const onCommentSubmit = (e) => {
+    const { name, comment } = commentDetails;
+    debugger;
+    socketRef.current.emit("comment", { name, comment });
+    e.preventDefault();
+    setCommentDetails({ comment: "", name });
+  };
+
+  const renderChat = () => {
+    return chat.map(({ name, message, dateTime }, index) => (
+      <div key={index}>
+        <h3>
+          {`${name}(${dateTime})`}: <span>{message}</span>
+        </h3>
+      </div>
+    ));
+  };
+
+  return (
+    <div className="card">
+      <div className={"row"}>
+        <form onSubmit={onMessageSubmit}>
+          <h1>Messenger</h1>
+          <div className="name-field">
+            <TextField
+              name="name"
+              onChange={(e) => onMessageDetailsChange(e)}
+              value={messageDetails.name}
+              label="Name"
+            />
+          </div>
+          <div>
+            <TextField
+              name="message"
+              onChange={(e) => onMessageDetailsChange(e)}
+              value={messageDetails.message}
+              id="outlined-multiline-static"
+              variant="outlined"
+              label="Message"
+            />
+          </div>
+          <button>Send Message</button>
+        </form>
+        <div className="render-chat">
+          <h1>Chat Log</h1>
+          {renderChat()}
+        </div>
+      </div>
+
+      <div className={"row"}>
+        <form onSubmit={onCommentSubmit}>
+          <h1>Comments</h1>
+          <div className="name-field">
+            <TextField
+              name="name"
+              onChange={(e) => onCommentDetailsChange(e)}
+              value={commentDetails.name}
+              label="Name"
+            />
+          </div>
+          <div>
+            <TextField
+              name="comment"
+              onChange={(e) => onCommentDetailsChange(e)}
+              value={commentDetails.comment}
+              id="outlined-multiline-static"
+              variant="outlined"
+              label="Comment"
+            />
+          </div>
+          <button>Post Comment</button>
+        </form>
+        <div className="render-chat">
+          <h1>Comments</h1>
+          {comments.map((m) => {
+            return (
+              <div>
+                <h3>{m.name}</h3>
+                <span>{m.comment}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 }
 
-export default App
-
+export default App;

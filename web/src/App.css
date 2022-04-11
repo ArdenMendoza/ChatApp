@@ -1,9 +1,13 @@
 .card {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
+  column-gap: 100px;
+  row-gap: 10px;
   margin: 30px;
   min-height: 30rem;
+  border: red dotted 1px
 }
+
 form {
   max-width: 350px;
   border-radius: 5px;
@@ -35,4 +39,17 @@ h3 {
 
 span {
   color: black;
+}
+
+.row {
+  display: flex;
+  column-gap: 100px;
+}
+
+.row>form {
+  width: 100%
+}
+
+.row>div {
+  width: 100%
 }
